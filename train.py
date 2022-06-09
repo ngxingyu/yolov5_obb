@@ -262,7 +262,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
-    results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
+    results = (0, 0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     stopper = EarlyStopping(patience=opt.patience)
@@ -544,6 +544,8 @@ def main(opt, callbacks=Callbacks()):
                 'box': (1, 0.02, 0.2),  # box loss gain
                 'cls': (1, 0.2, 4.0),  # cls loss gain
                 'cls_pw': (1, 0.5, 2.0),  # cls BCELoss positive_weight
+                'theta': (1, 0.1, 4.0),
+                'theta_pw': (1, 0.1, 2.0),
                 'obj': (1, 0.2, 4.0),  # obj loss gain (scale with pixels)
                 'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
                 'iou_t': (0, 0.1, 0.7),  # IoU training threshold
@@ -562,7 +564,9 @@ def main(opt, callbacks=Callbacks()):
                 'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
                 'mosaic': (1, 0.0, 1.0),  # image mixup (probability)
                 'mixup': (1, 0.0, 1.0),  # image mixup (probability)
-                'copy_paste': (1, 0.0, 1.0)}  # segment copy-paste (probability)
+                'copy_paste': (1, 0.0, 1.0),  # segment copy-paste (probability)
+                'cls_theta': (0, 180, 180),
+                'csl_radius': (0, 2.0, 2.0)}
 
         with open(opt.hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict

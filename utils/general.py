@@ -880,7 +880,7 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
 def print_mutation(results, hyp, save_dir, bucket):
     evolve_csv, results_csv, evolve_yaml = save_dir / 'evolve.csv', save_dir / 'results.csv', save_dir / 'hyp_evolve.yaml'
     keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
-            'val/box_loss', 'val/obj_loss', 'val/cls_loss') + tuple(hyp.keys())  # [results + hyps]
+            'val/box_loss', 'val/obj_loss', 'val/cls_loss', 'val/theta_loss') + tuple(hyp.keys())  # [results + hyps]
     keys = tuple(x.strip() for x in keys)
     vals = results + tuple(hyp.values())
     n = len(keys)
