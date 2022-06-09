@@ -93,7 +93,7 @@ def exif_transpose(image):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, names, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
-                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False):
+                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False, preserve_orientation=False):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -107,7 +107,8 @@ def create_dataloader(path, imgsz, batch_size, stride, names, single_cls=False, 
                                       stride=int(stride),
                                       pad=pad,
                                       image_weights=image_weights,
-                                      prefix=prefix)
+                                      prefix=prefix,
+                                      preserve_orientation=preserve_orientation)
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // WORLD_SIZE, batch_size if batch_size > 1 else 0, workers])  # number of workers
@@ -379,7 +380,7 @@ class LoadImagesAndLabels(Dataset):
     cache_version = 0.6  # dataset labels *.cache version
 
     def __init__(self, path, cls_names, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix='', preserve_orientation=False):
         """
         Returns:
             Dataset.labels (list): n_imgs * array(num_gt_perimg, [cls_id, poly])
@@ -398,6 +399,7 @@ class LoadImagesAndLabels(Dataset):
         self.path = path
         self.albumentations = Albumentations() if augment else None
         self.cls_names = cls_names
+        self.preserve_orientation = preserve_orientation
 
         try:
             f = []  # image files
@@ -639,7 +641,7 @@ class LoadImagesAndLabels(Dataset):
             rboxes, csl_labels  = poly2rbox(polys=labels[:, 1:], 
                                             num_cls_thata=hyp['cls_theta'] if hyp else 180, 
                                             radius=hyp['csl_radius'] if hyp else 6.0, 
-                                            use_pi=True, use_gaussian=True)
+                                            use_pi=True, use_gaussian=True, preserve_orientation=self.preserve_orientation)
             labels_obb = np.concatenate((labels[:, :1], rboxes, csl_labels), axis=1)
             labels_mask = (rboxes[:, 0] >= 0) & (rboxes[:, 0] < img.shape[1]) \
                         & (rboxes[:, 1] >= 0) & (rboxes[:, 0] < img.shape[0]) \

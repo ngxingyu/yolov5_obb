@@ -36,7 +36,7 @@ def regular_theta(theta, mode='180', start=-pi/2):
     theta = theta % cycle
     return theta + start
 
-def poly2rbox(polys, num_cls_thata=180, radius=6.0, use_pi=False, use_gaussian=False):
+def poly2rbox(polys, num_cls_thata=180, radius=6.0, use_pi=False, use_gaussian=False, preserve_orientation=False):
     """
     Trans poly format to rbox format.
     Args:
@@ -60,10 +60,17 @@ def poly2rbox(polys, num_cls_thata=180, radius=6.0, use_pi=False, use_gaussian=F
         poly = np.float32(poly.reshape(4, 2))
         (x, y), (w, h), angle = cv2.minAreaRect(poly) # θ ∈ [0， 90]
         angle = -angle # θ ∈ [-90， 0]
-        theta = angle / 180 * pi # 转为pi制
+        if preserve_orientation:
+            # use the closest angle to the bearing of the 2nd point from first point with cw +ve
+            estimate_angle = -np.arctan2(poly[1][1]-poly[0][1], poly[1][0]-poly[0][0]) / pi * 180
+            rotate = round((estimate_angle - angle) / 90)
+            angle += 90 * rotate
+            if rotate % 2 == 1:
+              w, h = h, w
 
-        # trans opencv format to longedge format θ ∈ [-pi/2， pi/2]
-        if w != max(w, h): 
+        theta = angle / 180 * pi # 转为pi制
+        if not preserve_orientation and  w != max(w, h): 
+          # trans opencv format to longedge format θ ∈ [-pi/2， pi/2]
             w, h = h, w
             theta += pi/2
         theta = regular_theta(theta) # limit theta ∈ [-pi/2, pi/2)
